@@ -1,4 +1,4 @@
-# yt-05 — Login Anomaly Detector
+# Login Anomaly Detector
 
 **Series A — Anomaly & Behavioral Detection in Production, Episode 1 of 3**
 
