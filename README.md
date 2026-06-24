@@ -1,6 +1,7 @@
 # Login Anomaly Detector
 
-**Series A — Anomaly & Behavioral Detection in Production, Episode 1 of 3**
+> Companion code for: **[Build a Login Anomaly Detector in Python — No Labels, No Rules (End-to-End)](https://youtu.be/h3JQGq-ZA_I)**
+> Part of the *Anomaly & Behavioral Detection in Production* series on [AI Engineering with Peeush](https://www.youtube.com/@AIEngineeringWithPeeush).
 
 Build an unsupervised login anomaly detector in Python — no labels, no rules, end to end.
 
@@ -49,8 +50,8 @@ The eval harness opens `data/labels.csv` only at scoring time — the detector n
 
 **Known miss:** `new_device_odd_hour` is partially caught. Users with irregular schedules (on-call, shift workers) have a wide hour distribution — a 2 AM login barely deviates from their median. The fix is per-user behavioral baselines, which is Episode 2.
 
-## Series
+## Series: Anomaly & Behavioral Detection in Production
 
-- **A1 (this repo):** Login anomaly detector — raw logs to scoring API
-- **A2:** Behavioral baselining — per-user adaptive thresholds
-- **A3:** Drift-aware retraining — keeping the detector current
+- **Episode 1 (this repo):** Login anomaly detector — raw logs to scoring API
+- **Episode 2:** Behavioral baselining — per-user adaptive thresholds
+- **Episode 3:** Drift-aware retraining — keeping the detector current
