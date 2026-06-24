@@ -293,7 +293,7 @@ def write_logs(all_events: List[dict]) -> None:
                 "lon":       e["lon"],
                 "success":   e["success"],
             })
-    print(f"  logs.csv        → {len(all_events):,} events")
+    print(f"  logs.csv        -> {len(all_events):,} events")
 
 
 def write_labels(all_events: List[dict]) -> None:
@@ -307,7 +307,7 @@ def write_labels(all_events: List[dict]) -> None:
     counts = {}
     for e in labeled:
         counts[e["attack"]] = counts.get(e["attack"], 0) + 1
-    print(f"  labels.csv      → {len(labeled):,} labeled events")
+    print(f"  labels.csv      -> {len(labeled):,} labeled events")
     for attack, count in sorted(counts.items()):
         print(f"    {attack:<30} {count:>4}")
 

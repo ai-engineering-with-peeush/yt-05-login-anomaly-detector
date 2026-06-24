@@ -175,7 +175,34 @@ def baseline_alerts(
     histories: Dict[str, UserHistory],
     z_threshold: float = 3.0,
 ) -> Dict[str, bool]:
-    """Simple baseline: z-score on geo_velocity_kmh alone (no other features)."""
+    """Simple baseline: z-score on geo_velocity_kmh alone (no other features).
+
+    Normalization (mu, sigma) is derived from training-window normal events only,
+    matching the deployment setting where the baseline is calibrated on clean data.
+    Including attack events in normalization inflates sigma, compresses z-scores
+    for attacks, and makes the baseline look weaker than it actually is.
+    """
+    train_cutoff = START_DATE + timedelta(days=TRAIN_DAYS)
+
+    # Calibrate on training-window clean events only.
+    train_vels = []
+    for event in events:
+        if event.ts >= train_cutoff or event.event_id in labels:
+            continue
+        history = histories.get(event.user_id)
+        if not history:
+            continue
+        prior = history.events_before(event.ts)
+        if not prior:
+            continue
+        train_vels.append(geo_velocity_kmh(prior[-1], event))
+
+    if not train_vels:
+        return {}
+    mu    = float(np.mean(train_vels))
+    sigma = float(np.std(train_vels)) or 1.0
+
+    # Score all events using the calibrated parameters.
     vels, eids = [], []
     for event in events:
         history = histories.get(event.user_id)
@@ -184,13 +211,10 @@ def baseline_alerts(
         prior = history.events_before(event.ts)
         if not prior:
             continue
-        vel = geo_velocity_kmh(prior[-1], event)
-        vels.append(vel)
+        vels.append(geo_velocity_kmh(prior[-1], event))
         eids.append(event.event_id)
 
-    arr = np.array(vels)
-    z   = np.abs(stats.zscore(arr))
-    return {eid: bool(z[i] > z_threshold) for i, eid in enumerate(eids)}
+    return {eid: bool(abs(vels[i] - mu) / sigma > z_threshold) for i, eid in enumerate(eids)}
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +261,7 @@ def print_report(
     print(f"\n  Total events scored : {total_scored:,}")
     print(f"  Total alerts        : {total_alerts:,}")
     print(f"  Alerts per 10k      : {alerts_per_10k:.1f}")
-    print(f"  (contamination={CONTAMINATION} → budget {CONTAMINATION*10_000:.0f}/10k)")
+    print(f"  (contamination={CONTAMINATION} -> budget {CONTAMINATION*10_000:.0f}/10k)")
 
     # ── Baseline comparison ──────────────────────────────────────────────
     print(f"\n{'Baseline (geo_velocity z-score)':<30} {'P':>6} {'R':>6} {'F1':>6}")
@@ -253,7 +277,7 @@ def print_report(
 
     print("\n" + "=" * 65)
     print("  Missed new_device_odd_hour cases = irregular-schedule users.")
-    print("  Their median_login_hour already spans odd hours → low deviation.")
+    print("  Their median_login_hour already spans odd hours -> low deviation.")
     print("  Fix: per-user behavioral baselines (Episode 2).")
     print("=" * 65 + "\n")
 
@@ -288,4 +312,4 @@ if __name__ == "__main__":
     model_payload = {"detector": detector, "threshold": threshold}
     with open(DATA_DIR / "model.pkl", "wb") as f:
         pickle.dump(model_payload, f)
-    print(f"Model saved → {DATA_DIR / 'model.pkl'}")
+    print(f"Model saved -> {DATA_DIR / 'model.pkl'}")
